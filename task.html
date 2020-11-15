@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HAFSA BAJWA</title>
+    <script src="script.js"></script>
+    <link rel="stylesheet" href="style.css" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+
+    <h1>HAFSA BAJWA - Student at UIO</h1>
+
+    <div class="topnav" id="myTopnav">
+      <a href="index.html" class="active">Home</a>
+      <a href="edu.html">Education</a>
+      <a href="task.html">JS Task</a>
+
+      <div class="dropdown">
+        <button class="dropbtn">
+          PROJECTS
+          <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+          <a href="desk.html">desktop applications</a>
+          <a href="web.html">web applications</a>
+        </div>
+      </div>
+      <a href="javascript:void(0);" class="icon" onclick="myFunc()">&#9776;</a>
+    </div>
+  </head>
+  <body onload="loadData()">
+    <br />
+    <br />
+    <input type="text" id="myText" value="" />
+    <button onclick="myJsFunction()">ADD</button>
+    <br /><br />
+    <br />
+    <input
+      type="text"
+      id="myInput"
+      onkeyup="find()"
+      placeholder="Search for names.."
+      title="Type in a name"
+    /><br />
+    <br />
+    <ul id="myList"></ul>
+    <br />
+    <br />
+    <script>
+      setInterval(updatePopulation, 3000);
+      // localStorage.clear("localData");
+
+      // store references some commonly used nodes in constants
+      let myList = document.getElementById("myList");
+      const myText = document.getElementById("myText");
+      const deleteButton = document.createElement("button");
+      async function myJsFunction() {
+        fetch(
+          `https://d6wn6bmjj722w.population.io/1.0/population/${myText.value}/today-and-tomorrow/`
+        )
+          .then((Response) => {
+            return Response.json();
+          })
+          .then((data) => {
+            //append Text
+            const li = document.createElement("li");
+
+            li.appendChild(document.createTextNode(myText.value));
+            li.setAttribute("id", myText.value);
+
+            //append Population
+            const population = data.total_population[0].population;
+            li.appendChild(document.createTextNode(population));
+
+            //append delete button
+            const deleteButton = document.createElement("button");
+            deleteButton.style.margin = "10px";
+            deleteButton.style.color = "red";
+            deleteButton.innerHTML = "X";
+            li.appendChild(deleteButton);
+            // call the del function with the list item
+            let str = myText.value + " " + population;
+            deleteButton.onclick = () => del(li, str);
+
+            // push data into local storage array
+            let arrData = [];
+            if (!localStorage.getItem("localData")) {
+              arrData.push(str);
+              let storageData = localStorage.setItem("localData", arrData);
+            } else {
+              arrData.push(localStorage.getItem("localData"));
+              arrData.push(str);
+              let storageData = localStorage.setItem("localData", arrData);
+            }
+
+            myList.appendChild(li); // as an argument
+            myText.value = "";
+          })
+          .catch((error) => {
+            alert("It is not supported");
+          });
+      }
+
+      // function behind appended delete button
+      function del(li) {
+        debugger;
+        let str = li.firstChild.data;
+        myList.removeChild(li);
+
+        // retrive Data  from locaStorgae =? localData
+        let data = localStorage.getItem("localData");
+        // convert that data into array
+        let arr = data.split(",");
+        let index = arr.findIndex((item) => item === str);
+        // delete specific element from array on basis of index
+        arr.splice(index, 1);
+        console.log(arr);
+        arr = JSON.stringify(arr);
+        localStorage.setItem("localData", arr);
+      }
+
+      // population counter
+      function updatePopulation() {
+        let countryName = [];
+        let countryDetail = localStorage.getItem("localData").split(",");
+        countryDetail.forEach((item) => {
+          let country = item.split(" ")[0];
+          countryName.push(country);
+        });
+        countryName.forEach(iteration);
+        function iteration(country, index) {
+          fetch(
+            `https://d6wn6bmjj722w.population.io/1.0/population/${country}/today-and-tomorrow/`
+          )
+            .then((Response) => {
+              return Response.json();
+            })
+            .then((data) => {
+              const todayPopulation = data.total_population[0].population;
+              const tomorrowPopulation = data.total_population[1].population;
+
+              var today = new Date();
+              var time =
+                today.getHours() +
+                ":" +
+                today.getMinutes() +
+                ":" +
+                today.getSeconds();
+
+              const today1 = new Date();
+              const tomorrow = new Date(today1);
+
+              tomorrow.setHours(0, 0, 0, 0);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+
+              let diff = tomorrow - today;
+              let timeDifference = Math.ceil(diff / 1000);
+
+              let finalPopulation =
+                (tomorrowPopulation - todayPopulation) / timeDifference;
+
+              let people =
+                todayPopulation + Math.floor(todayPopulation * finalPopulation);
+              let finalString = country + " " + people;
+
+              const countryNode = document.createTextNode(finalString);
+
+              const li = document.createElement("li");
+              li.appendChild(document.createTextNode(finalString));
+              li.setAttribute("id", country);
+              //append delete button
+              const deleteButton = document.createElement("button");
+              deleteButton.style.margin = "10px";
+              deleteButton.style.color = "red";
+              deleteButton.innerHTML = "X";
+              li.appendChild(deleteButton);
+              // call the del function with the list item
+
+              deleteButton.onclick = () => del(li, finalString);
+
+              var item = document.getElementById("myList");
+
+              // Replace the first child node of <ul> with the newly created text node
+              item.replaceChild(li, item.childNodes[index]);
+            })
+            .catch((error) => {
+              alert("It is not supported");
+            });
+        }
+      }
+      function loadData() {
+        const deleteButton = document.createElement("button");
+        let data = localStorage.getItem("localData");
+        if (data == null) return;
+        data = data.split(",");
+        data.forEach((item) => {
+          const li = document.createElement("li");
+          li.appendChild(document.createTextNode(item));
+          li.setAttribute("id", item.split(" ")[0]);
+
+          const deleteButton = document.createElement("button");
+          deleteButton.style.margin = "10px";
+          deleteButton.style.color = "red";
+          deleteButton.innerHTML = "X";
+          li.appendChild(deleteButton);
+          deleteButton.onclick = () => del(li); // call the del function with the list item
+
+          myList.appendChild(li); // as an argument
+          myText.value = "";
+        });
+      }
+
+      function find() {
+        var input, filter, ul, li, a, i;
+        input = document.getElementById("myInput");
+        filter = input.value.toUpperCase();
+        div = document.getElementById("myList");
+        a = div.getElementsByTagName("li");
+        for (i = 0; i < a.length; i++) {
+          txtValue = a[i].textContent || a[i].innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            a[i].style.display = "";
+          } else {
+            a[i].style.display = "none";
+          }
+        }
+      }
+    </script>
+
+    <div class="footer"><br /><br /><br />@copyright 2020</div>
+  </body>
+</html>
